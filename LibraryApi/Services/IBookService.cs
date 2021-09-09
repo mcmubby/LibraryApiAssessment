@@ -13,6 +13,6 @@ namespace LibraryApi.Services
 
         Task<List<GetBookDto>> SearchAsync(string searchParam, bool? isAvailable);
 
-        //Task<BookCheckoutDto> CheckoutAsync(List<int> bookIds);
+        Task<BookCheckoutDto> CheckoutAsync(CheckoutRequestDto checkoutRequest);
     }
 }

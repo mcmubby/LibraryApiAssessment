@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using LibraryApi.Data;
 using LibraryApi.Data.Entities;
+using LibraryApi.Dtos;
 using Microsoft.EntityFrameworkCore;
+using WorkingDaysManagement;
 
 namespace LibraryApi.Services
 {
@@ -32,6 +34,27 @@ namespace LibraryApi.Services
 
             await _context.Books.AddAsync(newBook);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<BookCheckoutDto> CheckoutAsync(CheckoutRequestDto checkoutRequest)
+        {
+            if(checkoutRequest == null || checkoutRequest.BooksId.Count == 0) return null;
+
+            var booksToCheckout = new List<Book>();
+            booksToCheckout = await _context.Books.Where(b => checkoutRequest.BooksId.Contains(b.Id) && b.IsAvailable == true)
+                                                      .ToListAsync();
+
+            if(booksToCheckout.Count == 0) return null;
+
+            var checkoutList = new List<Checkout>();
+
+            for (int i = 0; i < booksToCheckout.Count; i++)
+            {
+                checkoutList.Add(CreateCheckout(booksToCheckout[i].Id, checkoutRequest));
+                booksToCheckout[i].IsAvailable = false;
+            }
+
+            Add and save changes
         }
 
         public async Task<List<GetBookDto>> GetAllBooksAsync()
@@ -91,6 +114,21 @@ namespace LibraryApi.Services
             }
 
             return searchResult;
+        }
+
+        private static Checkout CreateCheckout(int bookId, CheckoutRequestDto customerDetail)
+        {
+            var workingDays = new WorkingDayHelper();
+            return new Checkout
+            {
+                BookId = bookId,
+                FullName = customerDetail.FullName,
+                Email = customerDetail.Email,
+                PhoneNumber = customerDetail.PhoneNumber,
+                NationalIdentificationNumber = customerDetail.NationalIdentificationNumber,
+                CheckoutDate = DateTime.Now,
+                ExpectedReturnDate = workingDays.FuturWorkingDays(DateTime.Now, 10)
+            };
         }
     }
 }

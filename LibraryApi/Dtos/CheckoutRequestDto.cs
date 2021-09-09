@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace LibraryApi.Dtos
 {
@@ -15,5 +16,7 @@ namespace LibraryApi.Dtos
         public DateTime CheckoutDate { get; set; }
 
         public DateTime DueDate { get; set; }
+
+        public List<int> BooksId { get; set; }
     }
 }
