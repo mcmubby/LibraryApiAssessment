@@ -1,32 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using LibraryApi.Data.Entities;
+using LibraryApi.Dtos;
 
-namespace LibraryApi.Data.Entities
+namespace LibraryApi
 {
-    public class Book
+    public class GetBookDetailDto
     {
-        [Key]
         public int Id { get; set; }
 
-        [Required]
         public string Title { get; set; }
 
-        [Required]
         public string ISBN { get; set; }
 
-        [Required]
         [DataType(DataType.Date)]
         public DateTime PublishYear { get; set; }
 
-        [Required]
-        [Column(TypeName ="Money")]
         public decimal CoverPrice { get; set; }
 
-        public bool IsAvailable { get; set; }
+        public string Availability { get; set; }
 
-        public virtual List<Checkout> CheckoutHistory { get; set; }
-
+        public List<CheckoutHistoryDto> CheckoutHistory { get; set; } = new List<CheckoutHistoryDto>();
     }
 }

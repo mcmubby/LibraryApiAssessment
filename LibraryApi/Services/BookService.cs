@@ -38,11 +38,11 @@ namespace LibraryApi.Services
         {
             var books = new List<GetBookDto>();
 
-            var response = await _context.Books.OrderBy(c => c.PublishYear).ToListAsync();
+            var collection = await _context.Books.OrderBy(b => b.PublishYear).ToListAsync();
 
-            if(response is null) return null;
+            if(collection is null) return null;
 
-            foreach (var book in response)
+            foreach (var book in collection)
             {
                 books.Add(book.AsGetBookDto());
             }
@@ -50,14 +50,47 @@ namespace LibraryApi.Services
             return books;
         }
 
-        public Task<GetBookWithHistoryDto> GetBookByIdAsync(int bookId)
+        public async Task<GetBookDetailDto> GetBookByIdAsync(int bookId)
         {
-            throw new System.NotImplementedException();
+            var bookDetails = await _context.Books.Where(b => b.Id == bookId)
+                                                  .Include(c => c.CheckoutHistory.OrderByDescending(h => h.Id))
+                                                  .FirstOrDefaultAsync();
+            
+            if(bookDetails is null) return null;
+
+            return bookDetails.AsGetBookdetailDto();
         }
 
-        public Task<List<GetBookDto>> SearchAsync(string searchParam)
+        public async Task<List<GetBookDto>> SearchAsync(string searchParam, bool? isAvailable)
         {
-            throw new System.NotImplementedException();
+            if(string.IsNullOrWhiteSpace(searchParam)) return await GetAllBooksAsync();
+
+            var searchResult = new List<GetBookDto>();
+            var collection = _context.Books as IQueryable<Book>;
+
+            if (isAvailable is null)
+            {
+                collection = collection.AsQueryable()
+                                       .Where(b => b.Title.Contains(searchParam) || b.ISBN.Contains(searchParam))
+                                       .OrderBy(c => c.PublishYear);
+            }
+            else
+            {
+                collection = collection.AsQueryable()
+                                       .Where(b => b.IsAvailable == isAvailable.Value && (b.Title.Contains(searchParam) || b.ISBN.Contains(searchParam)))
+                                       .OrderBy(c => c.PublishYear);
+            }
+
+            var books = await collection.ToListAsync();
+
+            if (books is null) return null;
+
+            foreach (var book in books)
+            {
+                searchResult.Add(book.AsGetBookDto());
+            }
+
+            return searchResult;
         }
     }
 }
