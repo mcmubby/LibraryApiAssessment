@@ -36,25 +36,69 @@ namespace LibraryApi.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<BookCheckoutDto> CheckoutAsync(CheckoutRequestDto checkoutRequest)
+        public async Task<CheckoutResponseDto> CheckoutAsync(CheckoutRequestDto checkoutRequest)
         {
-            if(checkoutRequest == null || checkoutRequest.BooksId.Count == 0) return null;
+            if(checkoutRequest == null || checkoutRequest.BooksId.Count == 0) 
+                return new CheckoutResponseDto{ Message = "Invalid request body", BooksCheckedOut = null };
 
             var booksToCheckout = new List<Book>();
             booksToCheckout = await _context.Books.Where(b => checkoutRequest.BooksId.Contains(b.Id) && b.IsAvailable == true)
                                                       .ToListAsync();
 
-            if(booksToCheckout.Count == 0) return null;
+            if(booksToCheckout.Count == 0) 
+                return new CheckoutResponseDto{ Message = "Book(s) not found or unavailable for check-out", BooksCheckedOut = null };
 
-            var checkoutList = new List<Checkout>();
+            var booksCheckedOutList = new List<Checkout>();
+            var response = new CheckoutResponseDto();
 
             for (int i = 0; i < booksToCheckout.Count; i++)
             {
-                checkoutList.Add(CreateCheckout(booksToCheckout[i].Id, checkoutRequest));
+                booksCheckedOutList.Add(CreateCheckout(booksToCheckout[i].Id, checkoutRequest));
                 booksToCheckout[i].IsAvailable = false;
+                response.BooksCheckedOut.Add(booksToCheckout[i].AsGetBookDto());
             }
 
-            Add and save changes
+            await _context.Checkouts.AddRangeAsync(booksCheckedOutList);
+            await _context.SaveChangesAsync();
+
+            response.Message = "Successfully checked-out book(s)";
+            response.DueDate = new WorkingDayHelper().FuturWorkingDays(DateTime.Now, 10);
+
+            return response;
+        }
+
+        public async Task<CheckInResponseDto> CheckInAsync(CheckInRequestDto checkInRequest)
+        {
+            if(checkInRequest == null || checkInRequest.BooksId.Count == 0) 
+                return new CheckInResponseDto{ Message = "Invalid request body", BooksCheckedIn = null };
+
+            var checkoutDetails = new List<Checkout>();
+            checkoutDetails = await _context.Checkouts.Where(c => checkInRequest.BooksId.Contains(c.Id) && c.NationalIdentificationNumber == checkInRequest.NationalIdentificationNumber)
+                                                     .Include(b => b.Book)
+                                                     .ToListAsync();
+
+            if(checkoutDetails.Count == 0) 
+                return new CheckInResponseDto{ Message = "Book(s) not found or already checked-in", BooksCheckedIn = null };
+
+            var response = new CheckInResponseDto();
+            var penaltyDetails = new List<LateCheckIn>();
+            int daysLate;
+
+            for (int i = 0; i < checkoutDetails.Count; i++)
+            {
+                checkoutDetails[i].Book.IsAvailable = true;
+                response.BooksCheckedIn.Add(checkoutDetails[i].Book.AsGetBookDto());
+
+                //Calculate are record check-in over due details
+                daysLate = CalculateOverDueDays(checkoutDetails[i]);
+                if(daysLate > 0) { penaltyDetails.Add(checkoutDetails[i].AsLateCheckInDto(daysLate)); }
+            }
+
+            await _context.LateCheckIns.AddRangeAsync(penaltyDetails);
+            await _context.SaveChangesAsync();
+
+            response.Message = "Successfully checked-out book(s)";
+            return response;
         }
 
         public async Task<List<GetBookDto>> GetAllBooksAsync()
@@ -82,6 +126,31 @@ namespace LibraryApi.Services
             if(bookDetails is null) return null;
 
             return bookDetails.AsGetBookdetailDto();
+        }
+
+        public async Task<List<CheckInDetailsDto>> GetCheckIndetailsAsync(CheckInRequestDto checkInRequest)
+        {
+            if(checkInRequest == null || checkInRequest.BooksId.Count == 0) 
+                return null;
+
+            var checkoutDetails = new List<Checkout>();
+            checkoutDetails = await _context.Checkouts.Where(c => checkInRequest.BooksId.Contains(c.Id) && c.NationalIdentificationNumber == checkInRequest.NationalIdentificationNumber)
+                                                     .Include(b => b.Book)
+                                                     .ToListAsync();
+
+            if(checkoutDetails.Count == 0) 
+                return null;
+
+            var response = new List<CheckInDetailsDto>();
+            int daysLate;
+
+            for (int i = 0; i < checkoutDetails.Count; i++)
+            {
+                daysLate = CalculateOverDueDays(checkoutDetails[i]);
+                response.Add(checkoutDetails[i].AsCheckInDetailsDto(daysLate));
+            }
+
+            return response;
         }
 
         public async Task<List<GetBookDto>> SearchAsync(string searchParam, bool? isAvailable)
@@ -130,5 +199,19 @@ namespace LibraryApi.Services
                 ExpectedReturnDate = workingDays.FuturWorkingDays(DateTime.Now, 10)
             };
         }
+
+        private static int CalculateOverDueDays(Checkout checkout)
+        {
+            var workingDays = new WorkingDayHelper();
+
+            var dateDifference = DateTime.Now - checkout.ExpectedReturnDate;
+
+            if(dateDifference.Days < 0) return 0;
+            
+            var workingDaysOverDue = workingDays.GetSpanDays(DateTime.Now, dateDifference);
+
+            return workingDaysOverDue;
+        }
+
     }
 }

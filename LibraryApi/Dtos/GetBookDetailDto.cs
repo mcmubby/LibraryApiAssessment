@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using LibraryApi.Data.Entities;
 using LibraryApi.Dtos;
 
-namespace LibraryApi
+namespace LibraryApi.Dtos
 {
     public class GetBookDetailDto
     {

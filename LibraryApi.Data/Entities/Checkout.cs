@@ -8,7 +8,7 @@ namespace LibraryApi.Data.Entities
     {
         public int Id { get; set; }
 
-        public virtual Book Books { get; set; }
+        public virtual Book Book { get; set; }
 
         public int BookId { get; set; }
 
@@ -27,10 +27,5 @@ namespace LibraryApi.Data.Entities
         public DateTime CheckoutDate { get; set; }
 
         public DateTime ExpectedReturnDate { get; set; }
-
-        //public DateTime ReturnDate { get; set; } 
-                                                        //should be on checkin model
-        //[Column(TypeName = "Money")]
-        //public decimal PenaltyFees { get; set; }
     }
 }

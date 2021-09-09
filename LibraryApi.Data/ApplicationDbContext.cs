@@ -14,5 +14,7 @@ namespace LibraryApi.Data
         public DbSet<Book> Books { get; set; }
 
         public DbSet<Checkout> Checkouts { get; set; }
+
+        public DbSet<LateCheckIn> LateCheckIns { get; set; }
     }
 }

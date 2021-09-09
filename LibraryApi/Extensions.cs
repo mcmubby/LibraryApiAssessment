@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LibraryApi.Data.Entities;
 using LibraryApi.Dtos;
@@ -43,6 +44,33 @@ namespace LibraryApi
             }
 
             return history;
+        }
+
+        public static LateCheckIn AsLateCheckInDto(this Checkout checkout, int daysLate)
+        {
+            return new LateCheckIn
+            {
+                CheckoutId = checkout.Id,
+                ReturnDate = DateTime.Now,
+                CheckoutDate = checkout.CheckoutDate,
+                ExpectedReturnDate = checkout.ExpectedReturnDate,
+                NumberOfDaysLate = daysLate,
+                PenaltyFees = daysLate * 200
+            };
+        }
+
+        public static CheckInDetailsDto AsCheckInDetailsDto(this Checkout checkout, int daysLate)
+        {
+            return new CheckInDetailsDto
+            {
+                BookId = checkout.BookId,
+                BookTitle = checkout.Book.Title,
+                CheckoutId = checkout.Id,
+                CheckoutDate = checkout.CheckoutDate,
+                ExpectedReturnDate = checkout.ExpectedReturnDate,
+                NumberOfDaysLate = daysLate,
+                PenaltyFees = daysLate < 1 ? 0 : daysLate * 200
+            };
         }
 
         private static CheckoutHistoryDto AsCheckoutHistoryDto(this Checkout checkout)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using LibraryApi.Dtos;
 
 namespace LibraryApi.Services
 {
@@ -13,6 +14,10 @@ namespace LibraryApi.Services
 
         Task<List<GetBookDto>> SearchAsync(string searchParam, bool? isAvailable);
 
-        Task<BookCheckoutDto> CheckoutAsync(CheckoutRequestDto checkoutRequest);
+        Task<CheckoutResponseDto> CheckoutAsync(CheckoutRequestDto checkoutRequest);
+
+        Task<CheckInResponseDto> CheckInAsync(CheckInRequestDto checkInRequest);
+
+        Task<List<CheckInDetailsDto>> GetCheckIndetailsAsync(CheckInRequestDto checkInRequest);
     }
 }

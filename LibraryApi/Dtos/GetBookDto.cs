@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace LibraryApi
+namespace LibraryApi.Dtos
 {
     public class GetBookDto
     {
