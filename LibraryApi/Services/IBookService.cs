@@ -6,7 +6,7 @@ namespace LibraryApi.Services
 {
     public interface IBookService
     {
-        Task AddBookAsync(AddBookDto book);
+        Task<GetBookDto> AddBookAsync(AddBookDto book);
 
         Task<List<GetBookDto>> GetAllBooksAsync();
 

@@ -19,10 +19,8 @@ namespace LibraryApi.Services
             this._context = context;
         }
 
-        public async Task AddBookAsync(AddBookDto book)
+        public async Task<GetBookDto> AddBookAsync(AddBookDto book)
         {
-            if (book == null) throw new ArgumentNullException(nameof(book));
-
             var newBook = new Book
             {
                 Title = book.Title,
@@ -34,6 +32,8 @@ namespace LibraryApi.Services
 
             await _context.Books.AddAsync(newBook);
             await _context.SaveChangesAsync();
+
+            return newBook.AsGetBookDto();
         }
 
         public async Task<CheckoutResponseDto> CheckoutAsync(CheckoutRequestDto checkoutRequest)

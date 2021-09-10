@@ -10,17 +10,12 @@ namespace LibraryApi.Data.Entities
         [Key]
         public int Id { get; set; }
 
-        [Required]
         public string Title { get; set; }
 
-        [Required]
         public string ISBN { get; set; }
 
-        [Required]
-        [DataType(DataType.Date)]
-        public DateTime PublishYear { get; set; }
+        public string PublishYear { get; set; }
 
-        [Required]
         [Column(TypeName ="Money")]
         public decimal CoverPrice { get; set; }
 

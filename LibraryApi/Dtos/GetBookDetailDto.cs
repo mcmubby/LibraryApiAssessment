@@ -14,8 +14,7 @@ namespace LibraryApi.Dtos
 
         public string ISBN { get; set; }
 
-        [DataType(DataType.Date)]
-        public DateTime PublishYear { get; set; }
+        public string PublishYear { get; set; }
 
         public decimal CoverPrice { get; set; }
 

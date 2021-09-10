@@ -23,43 +23,107 @@ namespace LibraryApi.Controllers
         [HttpGet]
         public async Task<ActionResult> GetAllBooksAsync()
         {
-            throw new NotImplementedException();
+            var response = await _bookService.GetAllBooksAsync();
+
+            LogInformation(nameof(GetAllBooksAsync), "");
+
+            return Ok(response);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult> GetBookByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            var response = await _bookService.GetBookByIdAsync(id);
+
+            LogInformation(nameof(GetBookByIdAsync), "");
+
+            return Ok(response);
         }
 
         [HttpPost("add")]
         public async Task<ActionResult> AddBookAsync([FromBody]AddBookDto addBook)
         {
-            throw new NotImplementedException();
+            if(addBook is null)
+            {
+                _logger.LogError(new ArgumentNullException(nameof(addBook)), $"Bad Request at Add Book endpoint at {DateTime.Now}");
+                return BadRequest();
+            }
+
+            var response = await _bookService.AddBookAsync(addBook);
+            LogInformation(nameof(AddBookAsync), "Book was added successfully");
+
+            return CreatedAtAction(nameof(GetBookByIdAsync), new{id = response.Id}, response);
         }
 
         [HttpPost("checkout")]
         public async Task<ActionResult> CheckOutAsync([FromBody]CheckoutRequestDto checkOutRequest)
         {
-            throw new NotImplementedException();
+            if(!ModelState.IsValid)
+            {
+                _logger.LogError(new ArgumentNullException(nameof(checkOutRequest)), $"Bad Request at Check-Out Book endpoint at {DateTime.Now}");
+                return BadRequest();
+            }
+
+            var response = await _bookService.CheckoutAsync(checkOutRequest);
+
+            if(response.BooksCheckedOut is null)
+            {
+                LogInformation(nameof(CheckOutAsync), response.Message);
+                return Ok(response.Message);
+            }
+
+            return Created("/", response);
         }
 
         [HttpPost("checkin")]
         public async Task<ActionResult> CheckInAsync([FromBody]CheckInRequestDto checkInRequest)
         {
-            throw new NotImplementedException();
+            if(!ModelState.IsValid)
+            {
+                _logger.LogError(new ArgumentNullException(nameof(checkInRequest)), $"Bad Request at Check-In Book endpoint at {DateTime.Now}");
+                return BadRequest();
+            }
+
+            var response = await _bookService.CheckInAsync(checkInRequest);
+
+            if(response.BooksCheckedIn is null)
+            {
+                LogInformation(nameof(CheckInAsync), response.Message);
+                return Ok(response.Message);
+            }
+
+            return Created("/", response);
         }
 
         [HttpGet("checkin/details")]
         public async Task<ActionResult> CheckInDetailsAsync([FromBody]CheckInRequestDto checkInRequest)
         {
-            throw new NotImplementedException();
+            if(!ModelState.IsValid)
+            {
+                _logger.LogError(new ArgumentNullException(nameof(checkInRequest)), $"Bad Request at Check-In Detail endpoint at {DateTime.Now}");
+                return BadRequest();
+            }
+
+            var response = await _bookService.GetCheckIndetailsAsync(checkInRequest);
+
+            return Ok(response);
         }
 
         [HttpGet("search")]
         public async Task<ActionResult> Search([FromQuery]string searchParam, [FromQuery]bool? available)
         {
-            throw new NotImplementedException();
+            available = available.HasValue ? available.Value : null;
+
+            var response = await _bookService.SearchAsync(searchParam, available);
+
+            LogInformation(nameof(Search), "");
+
+            return Ok(response);
+        }
+
+        private void LogInformation(string endpointName, string message)
+        {
+            _logger.LogInformation($"{endpointName} endpoint was accessed at {DateTime.Now}. {message}");
         }
     }
 }

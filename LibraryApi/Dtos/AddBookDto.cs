@@ -13,8 +13,7 @@ namespace LibraryApi.Dtos
         public string ISBN { get; set; }
 
         [Required(ErrorMessage = "Publish Year is Required")]
-        [DataType(DataType.Date)]
-        public DateTime PublishYear { get; set; }
+        public string PublishYear { get; set; }
 
         [Column(TypeName = "Money")]
         [Required(ErrorMessage = "Cover Price is Required")]
