@@ -21,6 +21,10 @@ namespace LibraryApi.Services
 
         public async Task<GetBookDto> AddBookAsync(AddBookDto book)
         {
+            //check for existing book
+            var existingBook = await _context.Books.Where(b => b.Title.ToUpper() == book.Title.ToUpper() && b.ISBN == book.ISBN).FirstOrDefaultAsync();
+            if(existingBook != null) return null;
+            
             var newBook = new Book
             {
                 Title = book.Title,
@@ -73,7 +77,7 @@ namespace LibraryApi.Services
                 return new CheckInResponseDto{ Message = "Invalid request body", BooksCheckedIn = null };
 
             var checkoutDetails = new List<Checkout>();
-            checkoutDetails = await _context.Checkouts.Where(c => checkInRequest.BooksId.Contains(c.Id) && c.NationalIdentificationNumber == checkInRequest.NationalIdentificationNumber)
+            checkoutDetails = await _context.Checkouts.Where(c => checkInRequest.BooksId.Contains(c.BookId) && c.NationalIdentificationNumber == checkInRequest.NationalIdentificationNumber)
                                                      .Include(b => b.Book)
                                                      .ToListAsync();
 
@@ -128,34 +132,27 @@ namespace LibraryApi.Services
             return bookDetails.AsGetBookdetailDto();
         }
 
-        public async Task<List<CheckInDetailsDto>> GetCheckIndetailsAsync(CheckInRequestDto checkInRequest)
+        public async Task<CheckInDetailsDto> GetCheckIndetailsAsync(string nationalIdentificationNumber, int bookId)
         {
-            if(checkInRequest == null || checkInRequest.BooksId.Count == 0) 
+            if(string.IsNullOrWhiteSpace(nationalIdentificationNumber)) 
                 return null;
 
-            var checkoutDetails = new List<Checkout>();
-            checkoutDetails = await _context.Checkouts.Where(c => checkInRequest.BooksId.Contains(c.Id) && c.NationalIdentificationNumber == checkInRequest.NationalIdentificationNumber)
+            var checkoutDetail = await _context.Checkouts.Where(c => c.BookId == bookId && c.NationalIdentificationNumber == nationalIdentificationNumber)
                                                      .Include(b => b.Book)
-                                                     .ToListAsync();
+                                                     .FirstOrDefaultAsync();
 
-            if(checkoutDetails.Count == 0) 
+            if(checkoutDetail is null) 
                 return null;
 
-            var response = new List<CheckInDetailsDto>();
-            int daysLate;
-
-            for (int i = 0; i < checkoutDetails.Count; i++)
-            {
-                daysLate = CalculateOverDueDays(checkoutDetails[i]);
-                response.Add(checkoutDetails[i].AsCheckInDetailsDto(daysLate));
-            }
+            int daysLate = CalculateOverDueDays(checkoutDetail);
+            var response = checkoutDetail.AsCheckInDetailsDto(daysLate);
 
             return response;
         }
 
         public async Task<List<GetBookDto>> SearchAsync(string searchParam, bool? isAvailable)
         {
-            if(string.IsNullOrWhiteSpace(searchParam)) return await GetAllBooksAsync();
+            if(string.IsNullOrWhiteSpace(searchParam) && isAvailable is null) return await GetAllBooksAsync();
 
             var searchResult = new List<GetBookDto>();
             var collection = _context.Books as IQueryable<Book>;
@@ -164,6 +161,12 @@ namespace LibraryApi.Services
             {
                 collection = collection.AsQueryable()
                                        .Where(b => b.Title.Contains(searchParam) || b.ISBN.Contains(searchParam))
+                                       .OrderBy(c => c.PublishYear);
+            }
+            else if(string.IsNullOrWhiteSpace(searchParam) && isAvailable.HasValue)
+            {
+                collection = collection.AsQueryable()
+                                       .Where(b => b.IsAvailable == isAvailable.Value)
                                        .OrderBy(c => c.PublishYear);
             }
             else

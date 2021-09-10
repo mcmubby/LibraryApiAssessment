@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using LibraryApi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -11,6 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using System.Text;
+using LibraryApi.Data;
+using Microsoft.EntityFrameworkCore;
+using LibraryApi.Helper;
 
 namespace LibraryApi
 {
@@ -32,11 +38,23 @@ namespace LibraryApi
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "LibraryApi", Version = "v1" });
             });
+
+            services.AddDbContextPool<ApplicationDbContext>(
+                options => options.UseSqlServer(Configuration.GetConnectionString("LibraryApiDb"),
+                sqlServerOptions => {
+                    sqlServerOptions.MigrationsAssembly("LibraryApi.Data");
+                })
+            );
+
+            services.AddScoped<IBookService, BookService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider svp)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider svp, ILoggerFactory loggerFactory)
         {
+            var path = Directory.GetCurrentDirectory();
+            loggerFactory.AddFile($"{path}\\Logs\\LibraryApiLogs.txt");
+            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -57,6 +75,8 @@ namespace LibraryApi
             {
                 endpoints.MapControllers();
             });
+
+            DbMigration.MigrateDatabaseContext(svp);
         }
     }
 }

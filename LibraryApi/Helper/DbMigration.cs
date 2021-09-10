@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace LibraryApi.Helper
 {
-    public static class Defaults
+    public static class DbMigration
     {
         public static void MigrateDatabaseContext(IServiceProvider svp)
         {

@@ -18,6 +18,6 @@ namespace LibraryApi.Services
 
         Task<CheckInResponseDto> CheckInAsync(CheckInRequestDto checkInRequest);
 
-        Task<List<CheckInDetailsDto>> GetCheckIndetailsAsync(CheckInRequestDto checkInRequest);
+        Task<CheckInDetailsDto> GetCheckIndetailsAsync(string nationalIdentificationNumber, int bookId);
     }
 }

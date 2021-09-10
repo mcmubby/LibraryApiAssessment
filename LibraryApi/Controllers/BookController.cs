@@ -50,6 +50,8 @@ namespace LibraryApi.Controllers
             }
 
             var response = await _bookService.AddBookAsync(addBook);
+            if(response is null) return Ok(new {Message = "Book already exist"});
+            
             LogInformation(nameof(AddBookAsync), "Book was added successfully");
 
             return CreatedAtAction(nameof(GetBookByIdAsync), new{id = response.Id}, response);
@@ -92,19 +94,16 @@ namespace LibraryApi.Controllers
                 return Ok(response.Message);
             }
 
+            LogInformation(nameof(CheckInAsync), response.Message);
             return Created("/", response);
         }
 
-        [HttpGet("checkin/details")]
-        public async Task<ActionResult> CheckInDetailsAsync([FromBody]CheckInRequestDto checkInRequest)
+        [HttpGet("checkin/details/{nationalIdentificationNumber}/{bookId}")]
+        public async Task<ActionResult> CheckInDetailsAsync(string nationalIdentificationNumber, int bookId)
         {
-            if(!ModelState.IsValid)
-            {
-                _logger.LogError(new ArgumentNullException(nameof(checkInRequest)), $"Bad Request at Check-In Detail endpoint at {DateTime.Now}");
-                return BadRequest();
-            }
+            var response = await _bookService.GetCheckIndetailsAsync(nationalIdentificationNumber, bookId);
 
-            var response = await _bookService.GetCheckIndetailsAsync(checkInRequest);
+            LogInformation(nameof(CheckInDetailsAsync), "");
 
             return Ok(response);
         }
